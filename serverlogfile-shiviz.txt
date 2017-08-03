@@ -1,0 +1,42 @@
+server {"server":1, }
+Initialization Complete
+server {"client":2, "server":2, }
+Received message from client.
+server {"client":2, "server":3, }
+Responding to client.
+server {"client":4, "server":4, }
+Received message from client.
+server {"client":4, "server":5, }
+Responding to client.
+server {"client":6, "server":6, }
+Received message from client.
+server {"client":6, "server":7, }
+Responding to client.
+server {"client":8, "server":8, }
+Received message from client.
+server {"client":8, "server":9, }
+Responding to client.
+server {"client":10, "server":10, }
+Received message from client.
+server {"client":10, "server":11, }
+Responding to client.
+server {"client":12, "server":12, }
+Received message from client.
+server {"client":12, "server":13, }
+Responding to client.
+server {"client":14, "server":14, }
+Received message from client.
+server {"client":14, "server":15, }
+Responding to client.
+server {"client":16, "server":16, }
+Received message from client.
+server {"client":16, "server":17, }
+Responding to client.
+server {"client":18, "server":18, }
+Received message from client.
+server {"client":18, "server":19, }
+Responding to client.
+server {"client":20, "server":20, }
+Received message from client.
+server {"client":20, "server":21, }
+Responding to client.

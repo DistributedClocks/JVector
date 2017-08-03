@@ -24,7 +24,7 @@
  */
 
 
-package vclock;
+package org.github.com.jvec.vclock;
 
 
 import java.util.Map;
@@ -40,7 +40,7 @@ public class VClock {
      * Construct an empty VectorClock
      */
     public VClock() {
-        vc = clockInit();
+        this.vc = clockInit();
     }
 
     private TreeMap<String, Long> clockInit() {
@@ -48,29 +48,29 @@ public class VClock {
     }
 
     public void tick(String pid) {
-        if (vc.containsKey(pid)) vc.put(pid, vc.get(pid) + 1);
-        else vc.put(pid, (long) 1);
+        if (this.vc.containsKey(pid)) this.vc.put(pid, this.vc.get(pid) + 1);
+        else this.vc.put(pid, (long) 1);
 
     }
 
     public void set(String pid, long ticks) {
-        if (vc.containsKey(pid)) vc.put(pid, ticks);
-        else vc.put(pid, ticks);
+        if (this.vc.containsKey(pid)) this.vc.put(pid, ticks);
+        else this.vc.put(pid, ticks);
     }
 
     public VClock copy() {
-        VClock clock  = new VClock();
+        VClock clock = new VClock();
         clock.vc.putAll(this.vc);
         return clock;
     }
 
     public long findTicks(String pid) {
-        return vc.getOrDefault(pid, (long) -1);
+        return this.vc.getOrDefault(pid, (long) -1);
     }
 
     public long lastUpdate(String pid) {
         long last = 0;
-        for (Map.Entry<String, Long> clock : vc.entrySet()) {
+        for (Map.Entry<String, Long> clock : this.vc.entrySet()) {
             if (clock.getValue() > last) {
                 last = clock.getValue();
             }
@@ -79,15 +79,23 @@ public class VClock {
     }
 
     public void merge(VClock other) {
-        vc.putAll(other.vc);
+        for (Map.Entry<String, Long> clock : other.vc.entrySet()) {
+            Long time = this.vc.get(clock.getKey());
+            if (time == null) {
+                this.vc.put(clock.getKey(), clock.getValue());
+            } else {
+                if (time < clock.getValue())
+                    this.vc.put(clock.getKey(), clock.getValue());
+            }
+        }
     }
 
     public String returnVCString() {
-        int mapSize = vc.size();
+        int mapSize = this.vc.size();
         int i = 0;
         StringBuilder vcString = new StringBuilder();
         vcString.append("{");
-        for (Map.Entry<String, Long> clock : vc.entrySet()) {
+        for (Map.Entry<String, Long> clock : this.vc.entrySet()) {
             vcString.append("\"");
             vcString.append(clock.getKey());
             vcString.append("\":");
@@ -97,7 +105,16 @@ public class VClock {
         vcString.append("}");
         return vcString.toString();
     }
+
     public void printVC() {
         System.out.println(returnVCString());
+    }
+
+    public int getClockSize() {
+        return this.vc.size();
+    }
+
+    public TreeMap<String, Long> getClockMap() {
+        return this.vc;
     }
 }

@@ -23,7 +23,11 @@
  *
  */
 
-import vclock.VClock;
+package org.github.com.jvec;
+
+import org.github.com.jvec.vclock.VClock;
+
+import java.io.IOException;
 
 public class Testing {
     static void testBasicInit() {
@@ -70,6 +74,7 @@ public class Testing {
         if (resultan != resultanc || resultbn != resultbnc || resultcn != resultcnc || resultdn != resultdnc)
             System.out.println("Copy not the same as the original new = " + n.returnVCString() + " , old = " + nc.returnVCString());
     }
+
     static void testMerge() {
         VClock n1 = new VClock();
         VClock n2 = new VClock();
@@ -84,14 +89,38 @@ public class Testing {
         long result2n = n3.findTicks("b");
         long result3n = n3.findTicks("c");
 
-        if (result1n != 2 || result2n != 3 || result3n != 1 )
-            System.out.println("Merge not as expected = " + n1.returnVCString() + " , old = " + n2.returnVCString() + ", "+ n3.returnVCString() );
+        if (result1n != 2 || result2n != 3 || result3n != 1)
+            System.out.println("Merge not as expected = " + n1.returnVCString() + " , old = " + n2.returnVCString() + ", " + n3.returnVCString());
         else
-            System.out.println("new = " + n1.returnVCString() + " , old = " + n2.returnVCString() + ", "+ n3.returnVCString() );
+            System.out.println("new = " + n1.returnVCString() + " , old = " + n2.returnVCString() + ", " + n3.returnVCString());
     }
+
+    static void testJVec() throws IOException {
+        Jvec vcInfo1 = new Jvec("client", "mylogfile");
+        Jvec vcInfo2 = new Jvec("testingClock", "mylogbile");
+        String data = "MYMSG";
+        byte[] result = vcInfo2.prepareSend("This is going to be written to file.", data.getBytes());
+        vcInfo1.vc.tick(vcInfo1.pid);
+        vcInfo1.vc.tick("Testing..");
+        System.out.println("Clock 1...");
+        vcInfo1.vc.printVC();
+        byte[] bmsg = vcInfo1.unpackReceive("This has been unpacked from file.", result);
+        System.out.println("After decoding...");
+        String msg = new String(bmsg, "UTF-8");
+        System.out.println("Message: " + msg);
+        vcInfo1.vc.printVC();
+    }
+
     public static void main(String args[]) {
         testBasicInit();
         testCopy();
         testMerge();
+        try {
+            testJVec();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+/*        final Logger logger = Logger.getLogger(Testing.class);
+        logger.info("Hello World");*/
     }
 }
