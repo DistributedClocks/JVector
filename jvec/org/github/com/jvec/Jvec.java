@@ -73,6 +73,23 @@ public class Jvec {
         }
     }
 
+    private boolean updateClock(String logMsg) {
+        long time = this.vc.findTicks(this.pid);
+        if (time == -1) {
+            System.err.println("Could not find process id in its vector clock.");
+            return false;
+        }
+        this.vc.tick(this.pid);
+
+        try {
+            writeLogMsg(logMsg);
+        } catch (IOException e) {
+            System.err.println("Could not write to log file.");
+            e.printStackTrace();
+        }
+        return true;
+    }
+
     void enableLogging() {
         this.logging = true;
     }
@@ -88,36 +105,12 @@ public class Jvec {
         this.vectorLog.flush();
     }
 
-    public void logLocalEvent(String logMsg) {
-        long time = this.vc.findTicks(this.pid);
-        if (time == -1) {
-            System.err.println("Could not find process id in its vector clock.");
-            return;
-        }
-        this.vc.tick(this.pid);
-
-        try {
-            writeLogMsg(logMsg);
-        } catch (IOException e) {
-            System.err.println("Could not write to log file.");
-            e.printStackTrace();
-        }
+    public synchronized void logLocalEvent(String logMsg) {
+        updateClock(logMsg);
     }
 
-    public byte[] prepareSend(String logMsg, byte[] packetContent) throws IOException {
-        long time = this.vc.findTicks(this.pid);
-        if (time == -1) {
-            System.err.println("Could not find process id in its vector clock.");
-            return null;
-        }
-        this.vc.tick(this.pid);
-
-        try {
-            writeLogMsg(logMsg);
-        } catch (IOException e) {
-            System.err.println("Could not write to log file.");
-            e.printStackTrace();
-        }
+    public synchronized byte[] prepareSend(String logMsg, byte[] packetContent) throws IOException {
+        if (!updateClock(logMsg)) return null;
         MessageBufferPacker packer = MessagePack.newDefaultBufferPacker();
         packer.packString(this.pid);
         packer.packBinaryHeader(packetContent.length);
@@ -131,7 +124,33 @@ public class Jvec {
         return packer.toByteArray();
     }
 
-    public byte[] prepareSend(String logMsg, byte packetContent) throws IOException {
+    public synchronized byte[] prepare_str(String logMsg, String packetContent) throws IOException {
+        if (!updateClock(logMsg)) return null;
+        MessageBufferPacker packer = MessagePack.newDefaultBufferPacker();
+        packer.packString(this.pid);
+        packer.packString(packetContent);
+        packer.packMapHeader(this.vc.getClockSize()); // the number of (key, value) pairs
+        for (Map.Entry<String, Long> clock : this.vc.getClockMap().entrySet()) {
+            packer.packString(clock.getKey());
+            packer.packLong(clock.getValue());
+        }
+        return packer.toByteArray();
+    }
+
+    public synchronized byte[] prepare_i64(String logMsg, Long packetContent) throws IOException {
+        if (!updateClock(logMsg)) return null;
+        MessageBufferPacker packer = MessagePack.newDefaultBufferPacker();
+        packer.packString(this.pid);
+        packer.packLong(packetContent);
+        packer.packMapHeader(this.vc.getClockSize()); // the number of (key, value) pairs
+        for (Map.Entry<String, Long> clock : this.vc.getClockMap().entrySet()) {
+            packer.packString(clock.getKey());
+            packer.packLong(clock.getValue());
+        }
+        return packer.toByteArray();
+    }
+
+    public synchronized byte[] prepareSend(String logMsg, byte packetContent) throws IOException {
         byte[] packetProxy = new byte[1];
         packetProxy[0] = packetContent;
         return prepareSend(logMsg, packetProxy);
@@ -179,4 +198,67 @@ public class Jvec {
         return decodedMsg;
     }
 
+    public String unpack_str(String logMsg, byte[] encodedMsg) throws IOException {
+        long time = this.vc.findTicks(this.pid);
+        if (time == -1) {
+            System.err.println("Could not find process id in its vector clock.");
+            return null;
+        }
+
+        // Deserialize with MessageUnpacker
+        MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(encodedMsg);
+        String src_pid = unpacker.unpackString();
+        String decodedMsg = unpacker.unpackString();
+        int numClocks = unpacker.unpackMapHeader();
+        VClock remoteClock = new VClock();
+        for (int i = 0; i < numClocks; ++i) {
+            String clock_pid = unpacker.unpackString();
+            Long clock_time = unpacker.unpackLong();
+            remoteClock.set(clock_pid, clock_time);
+        }
+        vc.tick(this.pid);
+        mergeRemoteClock(remoteClock);
+
+        try {
+            writeLogMsg(logMsg);
+        } catch (IOException e) {
+            System.err.println("Could not write to log file.");
+            e.printStackTrace();
+        }
+
+        unpacker.close();
+        return decodedMsg;
+    }
+
+    public Long unpack_i64(String logMsg, byte[] encodedMsg) throws IOException {
+        long time = this.vc.findTicks(this.pid);
+        if (time == -1) {
+            System.err.println("Could not find process id in its vector clock.");
+            return null;
+        }
+
+        // Deserialize with MessageUnpacker
+        MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(encodedMsg);
+        String src_pid = unpacker.unpackString();
+        Long decodedMsg = unpacker.unpackLong();
+        int numClocks = unpacker.unpackMapHeader();
+        VClock remoteClock = new VClock();
+        for (int i = 0; i < numClocks; ++i) {
+            String clock_pid = unpacker.unpackString();
+            Long clock_time = unpacker.unpackLong();
+            remoteClock.set(clock_pid, clock_time);
+        }
+        vc.tick(this.pid);
+        mergeRemoteClock(remoteClock);
+
+        try {
+            writeLogMsg(logMsg);
+        } catch (IOException e) {
+            System.err.println("Could not write to log file.");
+            e.printStackTrace();
+        }
+
+        unpacker.close();
+        return decodedMsg;
+    }
 }
