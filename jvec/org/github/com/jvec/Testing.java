@@ -26,12 +26,13 @@
 package org.github.com.jvec;
 
 import org.github.com.jvec.vclock.VClock;
+import org.github.com.jvec.vclock.VClockImpl;
 
 import java.io.IOException;
 
 public class Testing {
     static void testBasicInit() {
-        VClock n = new VClock();
+        VClock n = new VClockImpl();
         n.tick("a");
         n.tick("b");
         long result = n.findTicks("a");
@@ -55,7 +56,7 @@ public class Testing {
     }
 
     static void testCopy() {
-        VClock n = new VClock();
+        VClock n = new VClockImpl();
         n.set("a", 4);
         n.set("b", 1);
         n.set("c", 3);
@@ -76,8 +77,8 @@ public class Testing {
     }
 
     static void testMerge() {
-        VClock n1 = new VClock();
-        VClock n2 = new VClock();
+        VClock n1 = new VClockImpl();
+        VClockImpl n2 = new VClockImpl();
 
         n1.set("b", 1);
         n1.set("a", 2);
@@ -96,19 +97,19 @@ public class Testing {
     }
 
     static void testJVec() throws IOException {
-        Jvec vcInfo1 = new Jvec("client", "mylogfile");
-        Jvec vcInfo2 = new Jvec("testingClock", "mylogbile");
+        JvecImpl vcInfo1 = new JvecImpl("client", "mylogfile");
+        Jvec vcInfo2 = new JvecImpl("testingClock", "mylogbile");
         String data = "MYMSG";
         byte[] result = vcInfo2.prepareSend("This is going to be written to file.", data.getBytes());
-        vcInfo1.vc.tick(vcInfo1.pid);
-        vcInfo1.vc.tick("Testing..");
+        vcInfo1.getVc().tick(vcInfo1.getPid());
+        vcInfo1.getVc().tick("Testing..");
         System.out.println("Clock 1...");
-        vcInfo1.vc.printVC();
+        vcInfo1.getVc().printVC();
         byte[] bmsg = vcInfo1.unpackReceive("This has been unpacked from file.", result);
         System.out.println("After decoding...");
         String msg = new String(bmsg, "UTF-8");
         System.out.println("Message: " + msg);
-        vcInfo1.vc.printVC();
+        vcInfo1.getVc().printVC();
     }
 
     public static void main(String args[]) {

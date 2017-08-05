@@ -25,240 +25,145 @@
 
 package org.github.com.jvec;
 
-import com.sun.org.apache.xpath.internal.SourceTree;
-import org.github.com.jvec.msgpack.core.MessageBufferPacker;
-import org.github.com.jvec.msgpack.core.MessagePack;
-import org.github.com.jvec.msgpack.core.MessageUnpacker;
-import org.github.com.jvec.vclock.VClock;
-
-import javax.sound.midi.Soundbank;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Map;
 
+/**
+ * This is the basic JVec class used in any CVector application.
+ * It contains the thread-local vector clock and process as well as
+ * information about the logging procedure and file name.
+ * Creating a JVec object initialises and returns a new vcLog structure. This vcLog structure
+ * contains the configuration of the current vector thread as well as the
+ * vector clock map and process id.
+ * This structure is the basis of any further operation in CVector.
+ * Any log files with the same name as "logName" will be overwritten. "pid"
+ * should be unique in the current distributed system.
+ */
+public interface Jvec {
+    /**
+     * Appends a message in the log file defined in the vcLog vcInfo structure.
+     *
+     * @param logMsg Custom message will be written to the "vcInfo" log.
+     */
+    void writeLogMsg(String logMsg) throws IOException;
 
-public class Jvec {
+    /**
+     * Records a local event and increments the vector clock contained in "vcInfo".
+     * Also appends a message in the log file defined in the vcInfo structure.
+     *
+     * @param logMsg Custom message will be written to the "vcInfo" log.
+     */
+    void logLocalEvent(String logMsg);
 
-    public String pid;
-    public VClock vc;
-    private BufferedWriter vectorLog;
-    private boolean logging;
+    /**
+     * Encodes a buffer into a custom MessagePack byte array.
+     * This is the default JVector method.
+     * The function increments the vector clock contained of the JVec class, appends it to
+     * the binary "packetContent" and converts the full message into MessagePack format.
+     * This method is as generic as possible, any format passed to prepareSend will have to be
+     * decoded by unpackReceive. The decoded content will have to be cast back to the original format.
+     * In addition, prepareSend writes a custom defined message "logMsg" to the
+     * main CVector log.
+     *
+     * @param logMsg        Custom message will be written to the "vcInfo" log.
+     * @param packetContent The actual content of the packet we want to send out.
+     */
+    byte[] prepareSend(String logMsg, byte[] packetContent) throws IOException;
+    /**
+     * Encodes a buffer into a custom MessagePack byte array.
+     * The function increments the vector clock contained of the JVec class, appends it to
+     * the String "packetContent" and converts the full message into MessagePack format.
+     * This method is overloaded to accept single byte inputs as format.
+     * In addition, prepareSend writes a custom defined message "logMsg" to the
+     * main CVector log.
+     *
+     * @param logMsg        Custom message will be written to the "vcInfo" log.
+     * @param packetContent The actual content of the packet we want to send out.
+     */
+    byte[] prepareSend(String logMsg, byte packetContent) throws IOException;
 
-    public Jvec(String pid, String logName) {
-        this.pid = pid;
-        this.logging = true;
-        initJVector(logName);
-    }
+    /**
+     * Encodes a buffer into a custom MessagePack byte array.
+     * The function increments the vector clock contained of the JVec class, appends it to
+     * the String "packetContent" and converts the full message into MessagePack format.
+     * This method only accepts Strings as input format. To decode the byte array correctly,
+     * unpack_str will have to be used.
+     * In addition, prepareSend writes a custom defined message "logMsg" to the
+     * main CVector log.
+     *
+     * @param logMsg        Custom message will be written to the "vcInfo" log.
+     * @param packetContent The actual content of the packet we want to send out.
+     */
+    byte[] prepare_str(String logMsg, String packetContent) throws IOException;
+    /**
+     * Encodes a buffer into a custom MessagePack byte array.
+     * The function increments the vector clock contained of the JVec class, appends it to
+     * the String "packetContent" and converts the full message into MessagePack format.
+     * This method only accepts 64 bit integers as input format. To decode the byte array correctly,
+     * unpack_i64 will have to be used. Any smaller integer may be cast to long.
+     * In addition, prepareSend writes a custom defined message "logMsg" to the
+     * main CVector log.
+     *
+     * @param logMsg        Custom message will be written to the "vcInfo" log.
+     * @param packetContent The actual content of the packet we want to send out.
+     */
+    byte[] prepare_i64(String logMsg, Long packetContent) throws IOException;
 
-    private void initJVector(String logName) {
+    /**
+     * Decodes a GoVector buffer, updates the local vector clock, and returns the
+     * decoded data.
+     * This function takes a MessagePack buffer and extracts the vector clock as
+     * well as data. It increments the local vector clock, merges the unpacked
+     * clock with its own and returns a character representation of the data.
+     * This is the default method, which accepts any binary encoded data.
+     * If the data has been encoded as long or String, unpack_str or unpack_i64
+     * have to be used.
+     * In addition, prepareSend writes a custom defined message to the main
+     * CVector log.
+     *
+     * @param logMsg     Custom message will be written to the "vcInfo" log.
+     * @param encodedMsg The buffer to be decoded.
+     */
+    byte[] unpackReceive(String logMsg, byte[] encodedMsg) throws IOException;
 
-        this.vc = new VClock();
-        this.vc.tick(this.pid);
+    /**
+     * Decodes a GoVector buffer, updates the local vector clock, and returns the
+     * decoded data.
+     * This function takes a MessagePack buffer and extracts the vector clock as
+     * well as data. It increments the local vector clock, merges the unpacked
+     * clock with its own and returns a character representation of the data.
+     * This method will only work with byte arrays that have been encoded by prepare_str.
+     * In addition, prepareSend writes a custom defined message to the main
+     * CVector log.
+     *
+     * @param logMsg     Custom message will be written to the "vcInfo" log.
+     * @param encodedMsg The buffer to be decoded.
+     */
+    String unpack_str(String logMsg, byte[] encodedMsg) throws IOException;
 
-        FileWriter fw = null;
-        try {
+    /**
+     * Decodes a GoVector buffer, updates the local vector clock, and returns the
+     * decoded data.
+     * This function takes a MessagePack buffer and extracts the vector clock as
+     * well as data. It increments the local vector clock, merges the unpacked
+     * clock with its own and returns a character representation of the data.
+     * This method will only work with byte arrays that have been encoded by prepare_i64.
+     * In addition, prepareSend writes a custom defined message to the main
+     * CVector log.
+     *
+     * @param logMsg     Custom message will be written to the "vcInfo" log.
+     * @param encodedMsg The buffer to be decoded.
+     */
+    Long unpack_i64(String logMsg, byte[] encodedMsg) throws IOException;
 
-            fw = new FileWriter(logName + "-shiviz.txt");
-            vectorLog = new BufferedWriter(fw);
-        } catch (IOException e) {
-            System.err.println("Could not open log file.");
-            e.printStackTrace();
-        }
-        try {
-            writeLogMsg("Initialization Complete");
-        } catch (IOException e) {
-            System.err.println("Could not write to log file.");
-            e.printStackTrace();
-        }
-    }
+    /**
+     * Enables the logging mechanism of CVector. Logging is turned on by default.
+     * This is a cosmetic function. Setting vc.logging to true fulfils the same purpose.
+     */
+    void enableLogging();
 
-    private boolean updateClock(String logMsg) {
-        long time = this.vc.findTicks(this.pid);
-        if (time == -1) {
-            System.err.println("Could not find process id in its vector clock.");
-            return false;
-        }
-        this.vc.tick(this.pid);
-
-        try {
-            writeLogMsg(logMsg);
-        } catch (IOException e) {
-            System.err.println("Could not write to log file.");
-            e.printStackTrace();
-        }
-        return true;
-    }
-
-    void enableLogging() {
-        this.logging = true;
-    }
-
-    void disableLogging() {
-        this.logging = false;
-    }
-
-    public void writeLogMsg(String logMsg) throws IOException {
-        StringBuilder vcString = new StringBuilder();
-        vcString.append(this.pid + " " + this.vc.returnVCString() + "\n" + logMsg + "\n");
-        this.vectorLog.write(vcString.toString());
-        this.vectorLog.flush();
-    }
-
-    public synchronized void logLocalEvent(String logMsg) {
-        updateClock(logMsg);
-    }
-
-    public synchronized byte[] prepareSend(String logMsg, byte[] packetContent) throws IOException {
-        if (!updateClock(logMsg)) return null;
-        MessageBufferPacker packer = MessagePack.newDefaultBufferPacker();
-        packer.packString(this.pid);
-        packer.packBinaryHeader(packetContent.length);
-        packer.writePayload(packetContent);
-        packer.packMapHeader(this.vc.getClockSize()); // the number of (key, value) pairs
-        for (Map.Entry<String, Long> clock : this.vc.getClockMap().entrySet()) {
-            packer.packString(clock.getKey());
-            packer.packLong(clock.getValue());
-        }
-
-        return packer.toByteArray();
-    }
-
-    public synchronized byte[] prepare_str(String logMsg, String packetContent) throws IOException {
-        if (!updateClock(logMsg)) return null;
-        MessageBufferPacker packer = MessagePack.newDefaultBufferPacker();
-        packer.packString(this.pid);
-        packer.packString(packetContent);
-        packer.packMapHeader(this.vc.getClockSize()); // the number of (key, value) pairs
-        for (Map.Entry<String, Long> clock : this.vc.getClockMap().entrySet()) {
-            packer.packString(clock.getKey());
-            packer.packLong(clock.getValue());
-        }
-        return packer.toByteArray();
-    }
-
-    public synchronized byte[] prepare_i64(String logMsg, Long packetContent) throws IOException {
-        if (!updateClock(logMsg)) return null;
-        MessageBufferPacker packer = MessagePack.newDefaultBufferPacker();
-        packer.packString(this.pid);
-        packer.packLong(packetContent);
-        packer.packMapHeader(this.vc.getClockSize()); // the number of (key, value) pairs
-        for (Map.Entry<String, Long> clock : this.vc.getClockMap().entrySet()) {
-            packer.packString(clock.getKey());
-            packer.packLong(clock.getValue());
-        }
-        return packer.toByteArray();
-    }
-
-    public synchronized byte[] prepareSend(String logMsg, byte packetContent) throws IOException {
-        byte[] packetProxy = new byte[1];
-        packetProxy[0] = packetContent;
-        return prepareSend(logMsg, packetProxy);
-    }
-
-    private void mergeRemoteClock(VClock remoteClock) {
-        long time = this.vc.findTicks(this.pid);
-        if (time == -1) {
-            System.err.println("Could not find process id in its vector clock.");
-            return;
-        }
-        this.vc.merge(remoteClock);
-    }
-
-    public byte[] unpackReceive(String logMsg, byte[] encodedMsg) throws IOException {
-        long time = this.vc.findTicks(this.pid);
-        if (time == -1) {
-            System.err.println("Could not find process id in its vector clock.");
-            return null;
-        }
-
-        // Deserialize with MessageUnpacker
-        MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(encodedMsg);
-        String src_pid = unpacker.unpackString();
-        int msglen = unpacker.unpackBinaryHeader();
-        byte[] decodedMsg = unpacker.readPayload(msglen);
-        int numClocks = unpacker.unpackMapHeader();
-        VClock remoteClock = new VClock();
-        for (int i = 0; i < numClocks; ++i) {
-            String clock_pid = unpacker.unpackString();
-            Long clock_time = unpacker.unpackLong();
-            remoteClock.set(clock_pid, clock_time);
-        }
-        vc.tick(this.pid);
-        mergeRemoteClock(remoteClock);
-
-        try {
-            writeLogMsg(logMsg);
-        } catch (IOException e) {
-            System.err.println("Could not write to log file.");
-            e.printStackTrace();
-        }
-
-        unpacker.close();
-        return decodedMsg;
-    }
-
-    public String unpack_str(String logMsg, byte[] encodedMsg) throws IOException {
-        long time = this.vc.findTicks(this.pid);
-        if (time == -1) {
-            System.err.println("Could not find process id in its vector clock.");
-            return null;
-        }
-
-        // Deserialize with MessageUnpacker
-        MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(encodedMsg);
-        String src_pid = unpacker.unpackString();
-        String decodedMsg = unpacker.unpackString();
-        int numClocks = unpacker.unpackMapHeader();
-        VClock remoteClock = new VClock();
-        for (int i = 0; i < numClocks; ++i) {
-            String clock_pid = unpacker.unpackString();
-            Long clock_time = unpacker.unpackLong();
-            remoteClock.set(clock_pid, clock_time);
-        }
-        vc.tick(this.pid);
-        mergeRemoteClock(remoteClock);
-
-        try {
-            writeLogMsg(logMsg);
-        } catch (IOException e) {
-            System.err.println("Could not write to log file.");
-            e.printStackTrace();
-        }
-
-        unpacker.close();
-        return decodedMsg;
-    }
-
-    public Long unpack_i64(String logMsg, byte[] encodedMsg) throws IOException {
-        long time = this.vc.findTicks(this.pid);
-        if (time == -1) {
-            System.err.println("Could not find process id in its vector clock.");
-            return null;
-        }
-
-        // Deserialize with MessageUnpacker
-        MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(encodedMsg);
-        String src_pid = unpacker.unpackString();
-        Long decodedMsg = unpacker.unpackLong();
-        int numClocks = unpacker.unpackMapHeader();
-        VClock remoteClock = new VClock();
-        for (int i = 0; i < numClocks; ++i) {
-            String clock_pid = unpacker.unpackString();
-            Long clock_time = unpacker.unpackLong();
-            remoteClock.set(clock_pid, clock_time);
-        }
-        vc.tick(this.pid);
-        mergeRemoteClock(remoteClock);
-
-        try {
-            writeLogMsg(logMsg);
-        } catch (IOException e) {
-            System.err.println("Could not write to log file.");
-            e.printStackTrace();
-        }
-
-        unpacker.close();
-        return decodedMsg;
-    }
+    /**
+     * Disables the logging mechanism of CVector. Logging is turned on by default.
+     * This is a cosmetic function. Setting vc.logging to false fulfils the same purpose.
+     */
+    void disableLogging();
 }
