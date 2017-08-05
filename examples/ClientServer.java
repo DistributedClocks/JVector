@@ -30,6 +30,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
+import java.nio.ByteBuffer;
 
 public class ClientServer {
     private static final int SERVERPORT = 8080;
@@ -55,8 +56,7 @@ public class ClientServer {
                     DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
                     serverSocket.receive(receivePacket);
                     byte[] decodedMsg = vcInfo.unpackReceive("Received message from client.", receivePacket.getData());
-                    int msg = decodedMsg[0];
-                    System.out.println("Received message from client.");
+                    int msg = (int) decodedMsg[3];
                     if (msg == 0) {
                         nMinTwo = 0;
                         n = 0;
@@ -68,8 +68,9 @@ public class ClientServer {
                         nMinOne = n;
                         n = nMinOne + nMinTwo;
                     }
-                    byte[] inBuf = vcInfo.prepareSend("Responding to client.", (byte) n);
-                    System.out.println("Responding to client..");
+                    ByteBuffer b = ByteBuffer.allocate(4);
+                    byte[] inBuf = vcInfo.prepareSend("Responding to client.",  b.putInt(n).array());
+                    System.out.println("Responding to client with value "+ n);
                     DatagramPacket sendPacket = new DatagramPacket(inBuf, inBuf.length, IPAddress, CLIENTPORT);
                     serverSocket.send(sendPacket);
                 }
@@ -93,14 +94,15 @@ public class ClientServer {
                 InetAddress IPAddress = InetAddress.getByName("localhost");
                 int n = 0, nMinOne = 0, nMinTwo = 0;
                 for (int i = 0; i < MESSAGES; i++) {
-                    byte[] inBuf = vcInfo.prepareSend("Sending message to server.", (byte) i);
+                    ByteBuffer b = ByteBuffer.allocate(4);
+                    byte[] inBuf = vcInfo.prepareSend("Sending message to server.", b.putInt(i).array());
                     System.out.println("Sending message to server.");
                     DatagramPacket sendPacket = new DatagramPacket(inBuf, inBuf.length, IPAddress, SERVERPORT);
                     clientSocket.send(sendPacket);
                     DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
                     clientSocket.receive(receivePacket);
                     byte[] decodedMsg = vcInfo.unpackReceive("Received message from server.", receivePacket.getData());
-                    int msg = decodedMsg[0];
+                    int msg = decodedMsg[3];
                     System.out.println("Received value " + msg + " from server.");
                 }
                 clientSocket.close();

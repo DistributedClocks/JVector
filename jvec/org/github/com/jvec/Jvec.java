@@ -25,11 +25,13 @@
 
 package org.github.com.jvec;
 
+import com.sun.org.apache.xpath.internal.SourceTree;
 import org.github.com.jvec.msgpack.core.MessageBufferPacker;
 import org.github.com.jvec.msgpack.core.MessagePack;
 import org.github.com.jvec.msgpack.core.MessageUnpacker;
 import org.github.com.jvec.vclock.VClock;
 
+import javax.sound.midi.Soundbank;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -126,9 +128,7 @@ public class Jvec {
             packer.packLong(clock.getValue());
         }
 
-        byte[] encodedMsg = packer.toByteArray();
-        packer.close();
-        return encodedMsg;
+        return packer.toByteArray();
     }
 
     public byte[] prepareSend(String logMsg, byte packetContent) throws IOException {
