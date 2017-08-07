@@ -108,30 +108,36 @@ This is a cosmetic function. Setting vc.logging to false fulfils the same purpos
 The following is a basic example of how this library can be used:
 
 ```java
-#include "../src/jvec.h"
+import org.github.com.jvec.JVec;
+import java.io.IOException;
 
-int main (){
+public class BasicExample {
 
-    struct vcLog *vcInfo = initJVector("MyProcess","basiclog");
-    //Prepare  and send a Message
-    int size;
-    char sendingMessage[50];
-    strcpy(sendingMessage, "ExampleMessage");
-    printf("We are packing this message: %s\n", sendingMessage);
-    char *resultBuffer = prepareSend(vcInfo, "Sending Message", sendingMessage, &size);
-    //Unpack the message again
-    char *receivedMessage = unpackReceive(vcInfo, "Receiving Message", resultBuffer, size);
-    printf("We received this message: %s\n", receivedMessage);
+    public static void main(String args[]) {
 
-    //Can be called at any point 
-    logLocalEvent(vcInfo, "Example Complete");
-    //No further events will be written to log file
-    disableLogging(vcInfo);
-    logLocalEvent(vcInfo, "This will not be logged.");
+        JVec vcInfo = new JVec("MyProcess", "basiclog");
+        String sendingMessage = "ExampleMessage";
+        System.out.println("We are packing this message: " + sendingMessage);
+        try {
+            byte[] resultBuffer = vcInfo.prepareSend("Sending Message", sendingMessage.getBytes());
+            //Unpack the message again
+            byte[] receivedBuffer = vcInfo.unpackReceive("Receiving Message", resultBuffer);
+            String receivedMessage = new String(receivedBuffer);
+            System.out.println("We received this message: " + receivedMessage);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        //Can be called at any point
+        vcInfo.logLocalEvent("Example Complete");
+        //No further events will be written to log file
+        vcInfo.disableLogging();
+        vcInfo.logLocalEvent("This will not be logged.");
+    }
 }
 ```
 
-This produces the log "basiclog.shiviz" :
+This produces the log "basiclog-shiviz.txt" :
 
     MyProcess {"MyProcess":1}
     Initialization Complete

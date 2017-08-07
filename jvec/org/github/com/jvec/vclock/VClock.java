@@ -149,7 +149,7 @@ public class VClock {
             vcString.append(clock.getKey());
             vcString.append("\":");
             vcString.append(clock.getValue());
-            if (i < mapSize) vcString.append(", ");
+            if (i < mapSize-1) vcString.append(", ");
             i++;
         }
         vcString.append("}");
