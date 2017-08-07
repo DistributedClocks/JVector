@@ -39,7 +39,7 @@ import java.util.Map;
 
 public class JvecImpl implements Jvec {
 
-    private String pid;
+    private final String pid;
     private VClock vc;
     private BufferedWriter vectorLog;
     private boolean logging;
@@ -64,10 +64,9 @@ public class JvecImpl implements Jvec {
         this.vc = new VClockImpl();
         this.vc.tick(this.pid);
 
-        FileWriter fw = null;
         try {
 
-            fw = new FileWriter(logName + "-shiviz.txt");
+            FileWriter fw = new FileWriter(logName + "-shiviz.txt");
             vectorLog = new BufferedWriter(fw);
         } catch (IOException e) {
             System.err.println("Could not open log file.");
@@ -108,9 +107,12 @@ public class JvecImpl implements Jvec {
 
     @Override
     public void writeLogMsg(String logMsg) throws IOException {
-        StringBuilder vcString = new StringBuilder();
-        vcString.append(this.pid + " " + this.vc.returnVCString() + "\n" + logMsg + "\n");
-        this.vectorLog.write(vcString.toString());
+        if (!this.logging) {
+            System.err.println("Logging is not disabled!");
+            return;
+        }
+        String vcString = this.pid + " " + this.vc.returnVCString() + "\n" + logMsg + "\n";
+        this.vectorLog.write(vcString);
         this.vectorLog.flush();
     }
 
@@ -134,34 +136,6 @@ public class JvecImpl implements Jvec {
 
         return packer.toByteArray();
     }
-
-/*    @Override
-    public synchronized byte[] prepare_str(String logMsg, String packetContent) throws IOException {
-        if (!updateClock(logMsg)) return null;
-        MessageBufferPacker packer = MessagePack.newDefaultBufferPacker();
-        packer.packString(this.pid);
-        packer.packString(packetContent);
-        packer.packMapHeader(this.vc.getClockSize()); // the number of (key, value) pairs
-        for (Map.Entry<String, Long> clock : this.vc.getClockMap().entrySet()) {
-            packer.packString(clock.getKey());
-            packer.packLong(clock.getValue());
-        }
-        return packer.toByteArray();
-    }
-
-    @Override
-    public synchronized byte[] prepare_i64(String logMsg, Long packetContent) throws IOException {
-        if (!updateClock(logMsg)) return null;
-        MessageBufferPacker packer = MessagePack.newDefaultBufferPacker();
-        packer.packString(this.pid);
-        packer.packLong(packetContent);
-        packer.packMapHeader(this.vc.getClockSize()); // the number of (key, value) pairs
-        for (Map.Entry<String, Long> clock : this.vc.getClockMap().entrySet()) {
-            packer.packString(clock.getKey());
-            packer.packLong(clock.getValue());
-        }
-        return packer.toByteArray();
-    }*/
 
     @Override
     public synchronized byte[] prepareSend(String logMsg, byte packetContent) throws IOException {
@@ -212,70 +186,4 @@ public class JvecImpl implements Jvec {
         unpacker.close();
         return decodedMsg;
     }
-
- /*   @Override
-    public synchronized String unpack_str(String logMsg, byte[] encodedMsg) throws IOException {
-        long time = this.vc.findTicks(this.pid);
-        if (time == -1) {
-            System.err.println("Could not find process id in its vector clock.");
-            return null;
-        }
-
-        // Deserialize with MessageUnpacker
-        MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(encodedMsg);
-        String src_pid = unpacker.unpackString();
-        String decodedMsg = unpacker.unpackString();
-        int numClocks = unpacker.unpackMapHeader();
-        VClockImpl remoteClock = new VClockImpl();
-        for (int i = 0; i < numClocks; ++i) {
-            String clock_pid = unpacker.unpackString();
-            Long clock_time = unpacker.unpackLong();
-            remoteClock.set(clock_pid, clock_time);
-        }
-        vc.tick(this.pid);
-        mergeRemoteClock(remoteClock);
-
-        try {
-            writeLogMsg(logMsg);
-        } catch (IOException e) {
-            System.err.println("Could not write to log file.");
-            e.printStackTrace();
-        }
-
-        unpacker.close();
-        return decodedMsg;
-    }
-
-    @Override
-    public synchronized Long unpack_i64(String logMsg, byte[] encodedMsg) throws IOException {
-        long time = this.vc.findTicks(this.pid);
-        if (time == -1) {
-            System.err.println("Could not find process id in its vector clock.");
-            return null;
-        }
-
-        // Deserialize with MessageUnpacker
-        MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(encodedMsg);
-        String src_pid = unpacker.unpackString();
-        Long decodedMsg = unpacker.unpackLong();
-        int numClocks = unpacker.unpackMapHeader();
-        VClockImpl remoteClock = new VClockImpl();
-        for (int i = 0; i < numClocks; ++i) {
-            String clock_pid = unpacker.unpackString();
-            Long clock_time = unpacker.unpackLong();
-            remoteClock.set(clock_pid, clock_time);
-        }
-        vc.tick(this.pid);
-        mergeRemoteClock(remoteClock);
-
-        try {
-            writeLogMsg(logMsg);
-        } catch (IOException e) {
-            System.err.println("Could not write to log file.");
-            e.printStackTrace();
-        }
-
-        unpacker.close();
-        return decodedMsg;
-    }*/
 }

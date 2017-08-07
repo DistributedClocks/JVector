@@ -33,8 +33,7 @@ import java.util.TreeMap;
 
 public class VClockImpl implements VClock {
 
-    private static final long serialVersionUID = 1;
-    private TreeMap<String, Long> vc;
+    private final TreeMap<String, Long> vc;
 
 
     public VClockImpl() {
@@ -45,7 +44,7 @@ public class VClockImpl implements VClock {
      * Returns a new vector clock map and initiliases the map containing the clocks.
      */
     private TreeMap<String, Long> clockInit() {
-        return new TreeMap<String, Long>();
+        return new TreeMap<>();
     }
 
     @Override
@@ -80,7 +79,7 @@ public class VClockImpl implements VClock {
     }
 
     @Override
-    public long lastUpdate(String pid) {
+    public long lastUpdate() {
         long last = 0;
         for (Map.Entry<String, Long> clock : this.vc.entrySet()) {
             if (clock.getValue() > last) {

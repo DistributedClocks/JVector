@@ -48,10 +48,9 @@ public class ClientServer {
             try {
                 Jvec vcInfo = new JvecImpl("server", "serverlogfile");
                 DatagramSocket serverSocket = new DatagramSocket(SERVERPORT);
-                byte[] sendData = new byte[MAXBUFLEN];
                 byte[] receiveData = new byte[MAXBUFLEN];
-                InetAddress IPAddress = InetAddress.getByName("localhost");
-                int n = 0, nMinOne = 0, nMinTwo = 0;
+                InetAddress IPAddress = InetAddress.getByName(SERVERIP);
+                int n = 0, nMinOne = 0;
 
                 for (int i = 0; i < MESSAGES; i++) {
                     DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
@@ -60,13 +59,12 @@ public class ClientServer {
                     int decodedInt = decodedMsg.getInt();
                     System.out.println("Received message from client: " + decodedInt);
                     if (decodedInt == 0) {
-                        nMinTwo = 0;
                         n = 0;
                     } else if (decodedInt == 1) {
                         nMinOne = 0;
                         n = 1;
                     } else {
-                        nMinTwo = nMinOne;
+                        int nMinTwo = nMinOne;
                         nMinOne = n;
                         n = nMinOne + nMinTwo;
                     }
@@ -91,10 +89,8 @@ public class ClientServer {
             try {
                 Jvec vcInfo = new JvecImpl("client", "clientlogfile");
                 DatagramSocket clientSocket = new DatagramSocket(CLIENTPORT);
-                byte[] sendData = new byte[MAXBUFLEN];
                 byte[] receiveData = new byte[MAXBUFLEN];
-                InetAddress IPAddress = InetAddress.getByName("localhost");
-                int n = 0, nMinOne = 0, nMinTwo = 0;
+                InetAddress IPAddress = InetAddress.getByName(SERVERIP);
                 for (int i = 0; i < MESSAGES; i++) {
                     ByteBuffer b = ByteBuffer.allocate(Integer.SIZE/Byte.SIZE);
                     byte[] inBuf = vcInfo.prepareSend("Sending message to server.", b.putInt(i).array());

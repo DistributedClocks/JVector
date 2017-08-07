@@ -70,7 +70,7 @@ public interface VClock {
      * In this context, update means the current highest time value across all
      * clocks.
      */
-    long lastUpdate(String pid);
+    long lastUpdate();
 
     /**
      * Merges the clock map "vc" with a second clock map "other". This operation

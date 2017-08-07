@@ -31,7 +31,11 @@ import org.github.com.jvec.vclock.VClockImpl;
 import java.io.IOException;
 
 public class Testing {
-    static void testBasicInit() {
+
+    private Testing() {
+    }
+
+    private static void testBasicInit() {
         VClock n = new VClockImpl();
         n.tick("a");
         n.tick("b");
@@ -55,7 +59,7 @@ public class Testing {
         }
     }
 
-    static void testCopy() {
+    private static void testCopy() {
         VClock n = new VClockImpl();
         n.set("a", 4);
         n.set("b", 1);
@@ -76,7 +80,7 @@ public class Testing {
             System.out.println("Copy not the same as the original new = " + n.returnVCString() + " , old = " + nc.returnVCString());
     }
 
-    static void testMerge() {
+    private static void testMerge() {
         VClock n1 = new VClockImpl();
         VClockImpl n2 = new VClockImpl();
 
@@ -96,7 +100,7 @@ public class Testing {
             System.out.println("new = " + n1.returnVCString() + " , old = " + n2.returnVCString() + ", " + n3.returnVCString());
     }
 
-    static void testJVec() throws IOException {
+    private static void testJVec() throws IOException {
         JvecImpl vcInfo1 = new JvecImpl("client", "mylogfile");
         Jvec vcInfo2 = new JvecImpl("testingClock", "mylogbile");
         String data = "MYMSG";
