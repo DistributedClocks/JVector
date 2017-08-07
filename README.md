@@ -150,4 +150,4 @@ This produces the log "basiclog-shiviz.txt" :
 
 
 An executable example of a similar program can be found in
-[examples/ClientServer](https://github.com/DistributedClocks/JVector/blob/master/examples/client_server.c)
+[examples/ClientServer](https://github.com/DistributedClocks/JVector/blob/master/examples/ClientServer.java)
