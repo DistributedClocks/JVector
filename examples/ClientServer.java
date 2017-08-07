@@ -56,11 +56,13 @@ public class ClientServer {
                 for (int i = 0; i < MESSAGES; i++) {
                     DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
                     serverSocket.receive(receivePacket);
-                    Long decodedMsg = vcInfo.unpack_i64("Received message from client.", receivePacket.getData());
-                    if (decodedMsg == 0) {
+                    ByteBuffer decodedMsg = ByteBuffer.wrap(vcInfo.unpackReceive("Received message from client.", receivePacket.getData()));
+                    int decodedInt = decodedMsg.getInt();
+                    System.out.println("Received message from client: " + decodedInt);
+                    if (decodedInt == 0) {
                         nMinTwo = 0;
                         n = 0;
-                    } else if (decodedMsg == 1) {
+                    } else if (decodedInt == 1) {
                         nMinOne = 0;
                         n = 1;
                     } else {
@@ -68,9 +70,9 @@ public class ClientServer {
                         nMinOne = n;
                         n = nMinOne + nMinTwo;
                     }
-                    ByteBuffer b = ByteBuffer.allocate(4);
-                    byte[] inBuf = vcInfo.prepare_i64("Responding to client.",  (long) n);
-                    System.out.println("Responding to client with value "+ n);
+                    ByteBuffer b = ByteBuffer.allocate(Integer.SIZE/Byte.SIZE);
+                    byte[] inBuf = vcInfo.prepareSend("Responding to client.", b.putInt(n).array());
+                    System.out.println("Responding to client with value " + n);
                     DatagramPacket sendPacket = new DatagramPacket(inBuf, inBuf.length, IPAddress, CLIENTPORT);
                     serverSocket.send(sendPacket);
                 }
@@ -94,15 +96,16 @@ public class ClientServer {
                 InetAddress IPAddress = InetAddress.getByName("localhost");
                 int n = 0, nMinOne = 0, nMinTwo = 0;
                 for (int i = 0; i < MESSAGES; i++) {
-                    ByteBuffer b = ByteBuffer.allocate(4);
-                    byte[] inBuf = vcInfo.prepare_i64("Sending message to server.",(long) i);
+                    ByteBuffer b = ByteBuffer.allocate(Integer.SIZE/Byte.SIZE);
+                    byte[] inBuf = vcInfo.prepareSend("Sending message to server.", b.putInt(i).array());
                     System.out.println("Sending message to server.");
                     DatagramPacket sendPacket = new DatagramPacket(inBuf, inBuf.length, IPAddress, SERVERPORT);
                     clientSocket.send(sendPacket);
                     DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
                     clientSocket.receive(receivePacket);
-                    Long decodedMsg = vcInfo.unpack_i64("Received message from server.", receivePacket.getData());
-                    System.out.println("Received value " + decodedMsg + " from server.");
+                    ByteBuffer decodedMsg = ByteBuffer.wrap(vcInfo.unpackReceive("Received message from server.", receivePacket.getData()));
+                    int decodedInt = decodedMsg.getInt();
+                    System.out.println("Received value " + decodedInt + " from server.");
                 }
                 clientSocket.close();
             } catch (Exception e) {

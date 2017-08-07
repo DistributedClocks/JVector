@@ -58,6 +58,7 @@ public class JvecImpl implements Jvec {
         return vc;
     }
 
+
     private void initJVector(String logName) {
 
         this.vc = new VClockImpl();
@@ -134,7 +135,7 @@ public class JvecImpl implements Jvec {
         return packer.toByteArray();
     }
 
-    @Override
+/*    @Override
     public synchronized byte[] prepare_str(String logMsg, String packetContent) throws IOException {
         if (!updateClock(logMsg)) return null;
         MessageBufferPacker packer = MessagePack.newDefaultBufferPacker();
@@ -160,7 +161,7 @@ public class JvecImpl implements Jvec {
             packer.packLong(clock.getValue());
         }
         return packer.toByteArray();
-    }
+    }*/
 
     @Override
     public synchronized byte[] prepareSend(String logMsg, byte packetContent) throws IOException {
@@ -179,7 +180,7 @@ public class JvecImpl implements Jvec {
     }
 
     @Override
-    public byte[] unpackReceive(String logMsg, byte[] encodedMsg) throws IOException {
+    public synchronized byte[] unpackReceive(String logMsg, byte[] encodedMsg) throws IOException {
         long time = this.vc.findTicks(this.pid);
         if (time == -1) {
             System.err.println("Could not find process id in its vector clock.");
@@ -212,8 +213,8 @@ public class JvecImpl implements Jvec {
         return decodedMsg;
     }
 
-    @Override
-    public String unpack_str(String logMsg, byte[] encodedMsg) throws IOException {
+ /*   @Override
+    public synchronized String unpack_str(String logMsg, byte[] encodedMsg) throws IOException {
         long time = this.vc.findTicks(this.pid);
         if (time == -1) {
             System.err.println("Could not find process id in its vector clock.");
@@ -246,7 +247,7 @@ public class JvecImpl implements Jvec {
     }
 
     @Override
-    public Long unpack_i64(String logMsg, byte[] encodedMsg) throws IOException {
+    public synchronized Long unpack_i64(String logMsg, byte[] encodedMsg) throws IOException {
         long time = this.vc.findTicks(this.pid);
         if (time == -1) {
             System.err.println("Could not find process id in its vector clock.");
@@ -276,5 +277,5 @@ public class JvecImpl implements Jvec {
 
         unpacker.close();
         return decodedMsg;
-    }
+    }*/
 }

@@ -68,6 +68,7 @@ public interface Jvec {
      * @param packetContent The actual content of the packet we want to send out.
      */
     byte[] prepareSend(String logMsg, byte[] packetContent) throws IOException;
+
     /**
      * Encodes a buffer into a custom MessagePack byte array.
      * The function increments the vector clock contained of the JVec class, appends it to
@@ -80,33 +81,6 @@ public interface Jvec {
      * @param packetContent The actual content of the packet we want to send out.
      */
     byte[] prepareSend(String logMsg, byte packetContent) throws IOException;
-
-    /**
-     * Encodes a buffer into a custom MessagePack byte array.
-     * The function increments the vector clock contained of the JVec class, appends it to
-     * the String "packetContent" and converts the full message into MessagePack format.
-     * This method only accepts Strings as input format. To decode the byte array correctly,
-     * unpack_str will have to be used.
-     * In addition, prepareSend writes a custom defined message "logMsg" to the
-     * main CVector log.
-     *
-     * @param logMsg        Custom message will be written to the "vcInfo" log.
-     * @param packetContent The actual content of the packet we want to send out.
-     */
-    byte[] prepare_str(String logMsg, String packetContent) throws IOException;
-    /**
-     * Encodes a buffer into a custom MessagePack byte array.
-     * The function increments the vector clock contained of the JVec class, appends it to
-     * the String "packetContent" and converts the full message into MessagePack format.
-     * This method only accepts 64 bit integers as input format. To decode the byte array correctly,
-     * unpack_i64 will have to be used. Any smaller integer may be cast to long.
-     * In addition, prepareSend writes a custom defined message "logMsg" to the
-     * main CVector log.
-     *
-     * @param logMsg        Custom message will be written to the "vcInfo" log.
-     * @param packetContent The actual content of the packet we want to send out.
-     */
-    byte[] prepare_i64(String logMsg, Long packetContent) throws IOException;
 
     /**
      * Decodes a GoVector buffer, updates the local vector clock, and returns the
@@ -124,36 +98,6 @@ public interface Jvec {
      * @param encodedMsg The buffer to be decoded.
      */
     byte[] unpackReceive(String logMsg, byte[] encodedMsg) throws IOException;
-
-    /**
-     * Decodes a GoVector buffer, updates the local vector clock, and returns the
-     * decoded data.
-     * This function takes a MessagePack buffer and extracts the vector clock as
-     * well as data. It increments the local vector clock, merges the unpacked
-     * clock with its own and returns a character representation of the data.
-     * This method will only work with byte arrays that have been encoded by prepare_str.
-     * In addition, prepareSend writes a custom defined message to the main
-     * CVector log.
-     *
-     * @param logMsg     Custom message will be written to the "vcInfo" log.
-     * @param encodedMsg The buffer to be decoded.
-     */
-    String unpack_str(String logMsg, byte[] encodedMsg) throws IOException;
-
-    /**
-     * Decodes a GoVector buffer, updates the local vector clock, and returns the
-     * decoded data.
-     * This function takes a MessagePack buffer and extracts the vector clock as
-     * well as data. It increments the local vector clock, merges the unpacked
-     * clock with its own and returns a character representation of the data.
-     * This method will only work with byte arrays that have been encoded by prepare_i64.
-     * In addition, prepareSend writes a custom defined message to the main
-     * CVector log.
-     *
-     * @param logMsg     Custom message will be written to the "vcInfo" log.
-     * @param encodedMsg The buffer to be decoded.
-     */
-    Long unpack_i64(String logMsg, byte[] encodedMsg) throws IOException;
 
     /**
      * Enables the logging mechanism of CVector. Logging is turned on by default.
