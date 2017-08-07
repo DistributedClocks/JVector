@@ -1,4 +1,0 @@
-testingClock {"testingClock":1, }
-Initialization Complete
-testingClock {"testingClock":2, }
-This is going to be written to file.
