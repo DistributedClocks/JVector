@@ -75,3 +75,8 @@ fabric.properties
 # modules.xml
 ./idea*
 class/*
+*.txt
+
+\.idea/
+
+*.iml
