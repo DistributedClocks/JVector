@@ -29,49 +29,67 @@ import org.github.com.jvec.msgpack.core.MessageBufferPacker;
 import org.github.com.jvec.msgpack.core.MessagePack;
 import org.github.com.jvec.msgpack.core.MessageUnpacker;
 import org.github.com.jvec.vclock.VClock;
-import org.github.com.jvec.vclock.VClockImpl;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Map;
 
-
-public class JvecImpl implements Jvec {
+/**
+ * This is the basic JVec class used in any CVector application.
+ * It contains the thread-local vector clock and process as well as
+ * information about the logging procedure and file name.
+ * Creating a JVec object initialises and returns a new vcLog structure. This vcLog structure
+ * contains the configuration of the current vector thread as well as the
+ * vector clock map and process id.
+ * This structure is the basis of any further operation in CVector.
+ * Any log files with the same name as "logName" will be overwritten. "pid"
+ * should be unique in the current distributed system.
+ */
+public class JVec {
 
     private final String pid;
     private VClock vc;
     private BufferedWriter vectorLog;
     private boolean logging;
 
-    public JvecImpl(String pid, String logName) {
+    public JVec(String pid, String logName) {
         this.pid = pid;
         this.logging = true;
         initJVector(logName);
     }
 
+    /**
+     * Returns the process id of the class.
+     */
     public String getPid() {
         return pid;
     }
 
+    /**
+     * Returns the vector clock map contained in the class.
+     */
     public VClock getVc() {
         return vc;
     }
 
-
+    /**
+     * Initialise the vector clock class and open a log file.
+     */
     private void initJVector(String logName) {
 
-        this.vc = new VClockImpl();
+        this.vc = new VClock();
         this.vc.tick(this.pid);
+        this.logging = true;
 
         try {
-
             FileWriter fw = new FileWriter(logName + "-shiviz.txt");
             vectorLog = new BufferedWriter(fw);
         } catch (IOException e) {
             System.err.println("Could not open log file.");
             e.printStackTrace();
         }
+
         try {
             writeLogMsg("Initialization Complete");
         } catch (IOException e) {
@@ -79,6 +97,7 @@ public class JvecImpl implements Jvec {
             e.printStackTrace();
         }
     }
+
 
     private boolean updateClock(String logMsg) {
         long time = this.vc.findTicks(this.pid);
@@ -97,18 +116,13 @@ public class JvecImpl implements Jvec {
         return true;
     }
 
-    public void enableLogging() {
-        this.logging = true;
-    }
-
-    public void disableLogging() {
-        this.logging = false;
-    }
-
-    @Override
+    /**
+     * Appends a message in the log file defined in the vcLog vcInfo structure.
+     *
+     * @param logMsg Custom message will be written to the "vcInfo" log.
+     */
     public void writeLogMsg(String logMsg) throws IOException {
         if (!this.logging) {
-            System.err.println("Logging is not disabled!");
             return;
         }
         String vcString = this.pid + " " + this.vc.returnVCString() + "\n" + logMsg + "\n";
@@ -116,12 +130,29 @@ public class JvecImpl implements Jvec {
         this.vectorLog.flush();
     }
 
-    @Override
+    /**
+     * Records a local event and increments the vector clock contained in "vcInfo".
+     * Also appends a message in the log file defined in the vcInfo structure.
+     *
+     * @param logMsg Custom message will be written to the "vcInfo" log.
+     */
     public synchronized void logLocalEvent(String logMsg) {
         updateClock(logMsg);
     }
 
-    @Override
+    /**
+     * Encodes a buffer into a custom MessagePack byte array.
+     * This is the default JVector method.
+     * The function increments the vector clock contained of the JVec class, appends it to
+     * the binary "packetContent" and converts the full message into MessagePack format.
+     * This method is as generic as possible, any format passed to prepareSend will have to be
+     * decoded by unpackReceive. The decoded content will have to be cast back to the original format.
+     * In addition, prepareSend writes a custom defined message "logMsg" to the
+     * main CVector log.
+     *
+     * @param logMsg        Custom message will be written to the "vcInfo" log.
+     * @param packetContent The actual content of the packet we want to send out.
+     */
     public synchronized byte[] prepareSend(String logMsg, byte[] packetContent) throws IOException {
         if (!updateClock(logMsg)) return null;
         MessageBufferPacker packer = MessagePack.newDefaultBufferPacker();
@@ -137,14 +168,24 @@ public class JvecImpl implements Jvec {
         return packer.toByteArray();
     }
 
-    @Override
+    /**
+     * Encodes a buffer into a custom MessagePack byte array.
+     * The function increments the vector clock contained of the JVec class, appends it to
+     * the String "packetContent" and converts the full message into MessagePack format.
+     * This method is overloaded to accept single byte inputs as format.
+     * In addition, prepareSend writes a custom defined message "logMsg" to the
+     * main CVector log.
+     *
+     * @param logMsg        Custom message will be written to the "vcInfo" log.
+     * @param packetContent The actual content of the packet we want to send out.
+     */
     public synchronized byte[] prepareSend(String logMsg, byte packetContent) throws IOException {
         byte[] packetProxy = new byte[1];
         packetProxy[0] = packetContent;
         return prepareSend(logMsg, packetProxy);
     }
 
-    private void mergeRemoteClock(VClockImpl remoteClock) {
+    private void mergeRemoteClock(VClock remoteClock) {
         long time = this.vc.findTicks(this.pid);
         if (time == -1) {
             System.err.println("Could not find process id in its vector clock.");
@@ -153,7 +194,21 @@ public class JvecImpl implements Jvec {
         this.vc.merge(remoteClock);
     }
 
-    @Override
+    /**
+     * Decodes a GoVector buffer, updates the local vector clock, and returns the
+     * decoded data.
+     * This function takes a MessagePack buffer and extracts the vector clock as
+     * well as data. It increments the local vector clock, merges the unpacked
+     * clock with its own and returns a character representation of the data.
+     * This is the default method, which accepts any binary encoded data.
+     * If the data has been encoded as long or String, unpack_str or unpack_i64
+     * have to be used.
+     * In addition, prepareSend writes a custom defined message to the main
+     * CVector log.
+     *
+     * @param logMsg     Custom message will be written to the "vcInfo" log.
+     * @param encodedMsg The buffer to be decoded.
+     */
     public synchronized byte[] unpackReceive(String logMsg, byte[] encodedMsg) throws IOException {
         long time = this.vc.findTicks(this.pid);
         if (time == -1) {
@@ -167,7 +222,7 @@ public class JvecImpl implements Jvec {
         int msglen = unpacker.unpackBinaryHeader();
         byte[] decodedMsg = unpacker.readPayload(msglen);
         int numClocks = unpacker.unpackMapHeader();
-        VClockImpl remoteClock = new VClockImpl();
+        VClock remoteClock = new VClock();
         for (int i = 0; i < numClocks; ++i) {
             String clock_pid = unpacker.unpackString();
             Long clock_time = unpacker.unpackLong();
@@ -185,5 +240,21 @@ public class JvecImpl implements Jvec {
 
         unpacker.close();
         return decodedMsg;
+    }
+
+    /**
+     * Enables the logging mechanism of CVector. Logging is turned on by default.
+     * This is a cosmetic function. Setting vc.logging to true fulfils the same purpose.
+     */
+    public void enableLogging() {
+        this.logging = true;
+    }
+
+    /**
+     * Disables the logging mechanism of CVector. Logging is turned on by default.
+     * This is a cosmetic function. Setting vc.logging to false fulfils the same purpose.
+     */
+    public void disableLogging() {
+        this.logging = false;
     }
 }

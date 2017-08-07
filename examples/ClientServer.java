@@ -23,8 +23,7 @@
  *
  */
 
-import org.github.com.jvec.Jvec;
-import org.github.com.jvec.JvecImpl;
+import org.github.com.jvec.JVec;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -46,7 +45,7 @@ public class ClientServer {
         @Override
         protected void compute() {
             try {
-                Jvec vcInfo = new JvecImpl("server", "serverlogfile");
+                JVec vcInfo = new JVec("server", "serverlogfile");
                 DatagramSocket serverSocket = new DatagramSocket(SERVERPORT);
                 byte[] receiveData = new byte[MAXBUFLEN];
                 InetAddress IPAddress = InetAddress.getByName(SERVERIP);
@@ -87,7 +86,7 @@ public class ClientServer {
         protected void compute() {
 
             try {
-                Jvec vcInfo = new JvecImpl("client", "clientlogfile");
+                JVec vcInfo = new JVec("client", "clientlogfile");
                 DatagramSocket clientSocket = new DatagramSocket(CLIENTPORT);
                 byte[] receiveData = new byte[MAXBUFLEN];
                 InetAddress IPAddress = InetAddress.getByName(SERVERIP);

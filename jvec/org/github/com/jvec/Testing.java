@@ -26,7 +26,6 @@
 package org.github.com.jvec;
 
 import org.github.com.jvec.vclock.VClock;
-import org.github.com.jvec.vclock.VClockImpl;
 
 import java.io.IOException;
 
@@ -36,7 +35,7 @@ public class Testing {
     }
 
     private static void testBasicInit() {
-        VClock n = new VClockImpl();
+        VClock n = new VClock();
         n.tick("a");
         n.tick("b");
         long result = n.findTicks("a");
@@ -60,7 +59,7 @@ public class Testing {
     }
 
     private static void testCopy() {
-        VClock n = new VClockImpl();
+        VClock n = new VClock();
         n.set("a", 4);
         n.set("b", 1);
         n.set("c", 3);
@@ -81,8 +80,8 @@ public class Testing {
     }
 
     private static void testMerge() {
-        VClock n1 = new VClockImpl();
-        VClockImpl n2 = new VClockImpl();
+        VClock n1 = new VClock();
+        VClock n2 = new VClock();
 
         n1.set("b", 1);
         n1.set("a", 2);
@@ -101,8 +100,8 @@ public class Testing {
     }
 
     private static void testJVec() throws IOException {
-        JvecImpl vcInfo1 = new JvecImpl("client", "mylogfile");
-        Jvec vcInfo2 = new JvecImpl("testingClock", "mylogbile");
+        JVec vcInfo1 = new JVec("client", "mylogfile");
+        JVec vcInfo2 = new JVec("testingClock", "mylogbile");
         String data = "MYMSG";
         byte[] result = vcInfo2.prepareSend("This is going to be written to file.", data.getBytes());
         vcInfo1.getVc().tick(vcInfo1.getPid());
