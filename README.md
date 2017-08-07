@@ -4,8 +4,8 @@ JVector
 This library can be added to a Java project to generate a [ShiViz](http://bestchai.bitbucket.org/shiviz/)-compatible vector-clock timestamped log of events in a concurrent or distributed system.
 JVector is compatible with Java 1.7+.
 
-* /org/github/com/jvec    : Contains the Library and all its dependencies
-* example/  : Contains examples which can be instrumented with JVector
+* org/github/com/jvec /   : Contains the Library and all its dependencies
+* examples/  : Contains examples which can be instrumented with JVector
 
 
 ### Usage
@@ -21,7 +21,7 @@ org.github.com.jvec.vclock
 org.github.com.jvec.msgpack
 ```
 
-To use JVector simply include the jar file contained in lib or the raw source files.
+To use JVector simply include the jar file contained in lib/ or use the raw source files.
 
 You can compile your project by importing the following package:
 ```
