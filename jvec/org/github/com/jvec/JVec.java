@@ -36,13 +36,10 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * This is the basic JVec class used in any CVector application.
+ * This is the basic JVec class used in any JVector application.
  * It contains the thread-local vector clock and process as well as
  * information about the logging procedure and file name.
- * Creating a JVec object initialises and returns a new vcLog structure. This vcLog structure
- * contains the configuration of the current vector thread as well as the
- * vector clock map and process id.
- * This structure is the basis of any further operation in CVector.
+ * This class is the basis of any further operation in JVector.
  * Any log files with the same name as "logName" will be overwritten. "pid"
  * should be unique in the current distributed system.
  */
@@ -98,7 +95,6 @@ public class JVec {
         }
     }
 
-
     private boolean updateClock(String logMsg) {
         long time = this.vc.findTicks(this.pid);
         if (time == -1) {
@@ -117,9 +113,9 @@ public class JVec {
     }
 
     /**
-     * Appends a message in the log file defined in the vcLog vcInfo structure.
+     * Appends a message in the log file defined in this class.
      *
-     * @param logMsg Custom message will be written to the "vcInfo" log.
+     * @param logMsg Custom message that will be written to the log.
      */
     public void writeLogMsg(String logMsg) throws IOException {
         if (!this.logging) {
@@ -131,10 +127,10 @@ public class JVec {
     }
 
     /**
-     * Records a local event and increments the vector clock contained in "vcInfo".
+     * Records a local event and increments the vector clock of this class.
      * Also appends a message in the log file defined in the vcInfo structure.
      *
-     * @param logMsg Custom message will be written to the "vcInfo" log.
+     * @param logMsg Custom message will be written to the "vectorLog" log.
      */
     public synchronized void logLocalEvent(String logMsg) {
         updateClock(logMsg);
@@ -148,9 +144,9 @@ public class JVec {
      * This method is as generic as possible, any format passed to prepareSend will have to be
      * decoded by unpackReceive. The decoded content will have to be cast back to the original format.
      * In addition, prepareSend writes a custom defined message "logMsg" to the
-     * main CVector log.
+     * main JVector log.
      *
-     * @param logMsg        Custom message will be written to the "vcInfo" log.
+     * @param logMsg        Custom message will be written to the vectorLog log.
      * @param packetContent The actual content of the packet we want to send out.
      */
     public synchronized byte[] prepareSend(String logMsg, byte[] packetContent) throws IOException {
@@ -174,9 +170,9 @@ public class JVec {
      * the String "packetContent" and converts the full message into MessagePack format.
      * This method is overloaded to accept single byte inputs as format.
      * In addition, prepareSend writes a custom defined message "logMsg" to the
-     * main CVector log.
+     * main JVector log.
      *
-     * @param logMsg        Custom message will be written to the "vcInfo" log.
+     * @param logMsg        Custom message will be written to the "vectorLog" log.
      * @param packetContent The actual content of the packet we want to send out.
      */
     public synchronized byte[] prepareSend(String logMsg, byte packetContent) throws IOException {
@@ -195,18 +191,16 @@ public class JVec {
     }
 
     /**
-     * Decodes a GoVector buffer, updates the local vector clock, and returns the
+     * Decodes a JVector buffer, updates the local vector clock, and returns the
      * decoded data.
      * This function takes a MessagePack buffer and extracts the vector clock as
      * well as data. It increments the local vector clock, merges the unpacked
      * clock with its own and returns a character representation of the data.
      * This is the default method, which accepts any binary encoded data.
-     * If the data has been encoded as long or String, unpack_str or unpack_i64
-     * have to be used.
      * In addition, prepareSend writes a custom defined message to the main
-     * CVector log.
+     * JVector log.
      *
-     * @param logMsg     Custom message will be written to the "vcInfo" log.
+     * @param logMsg     Custom message will be written to the "vectorLog" log.
      * @param encodedMsg The buffer to be decoded.
      */
     public synchronized byte[] unpackReceive(String logMsg, byte[] encodedMsg) throws IOException {
@@ -243,7 +237,7 @@ public class JVec {
     }
 
     /**
-     * Enables the logging mechanism of CVector. Logging is turned on by default.
+     * Enables the logging mechanism of JVector. Logging is turned on by default.
      * This is a cosmetic function. Setting vc.logging to true fulfils the same purpose.
      */
     public void enableLogging() {
@@ -251,7 +245,7 @@ public class JVec {
     }
 
     /**
-     * Disables the logging mechanism of CVector. Logging is turned on by default.
+     * Disables the logging mechanism of JVector. Logging is turned on by default.
      * This is a cosmetic function. Setting vc.logging to false fulfils the same purpose.
      */
     public void disableLogging() {

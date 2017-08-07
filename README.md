@@ -4,7 +4,7 @@ JVector
 This library can be added to a Java project to generate a [ShiViz](http://bestchai.bitbucket.org/shiviz/)-compatible vector-clock timestamped log of events in a concurrent or distributed system.
 JVector is compatible with Java 1.7+.
 
-* org.github.com.jvec    : Contains the Library and all its dependencies
+* /org/github/com/jvec    : Contains the Library and all its dependencies
 * example/  : Contains examples which can be instrumented with JVector
 
 
@@ -25,114 +25,89 @@ To use JVector simply include the jar file contained in lib or the raw source fi
 
 You can compile your project by importing the following package:
 ```
-src/vclock/jvec.h src/vclock/vclock.h src/mpack/mpack.h
+import org.github.com.jvec.JVec;
 ```
 
-Or by generating the libjvec library via this command:
-
-```make
-make lib
-```
-and then compiling your program by including src/libjvec.a
-
-```make
-gcc -o myApp src/libjvec.a
-```
 
 ### Index
 ```
-struct vcLog *initJVector(char *pid, char *logName);
+void writeLogMsg(String logMsg);
 ```
 ```
-int writeLogMsg(struct vcLog *vcInfo, char *logMsg);
+synchronized void logLocalEvent(String logMsg);
 ```
 ```
-int loglocalEvent(struct vcLog *vcInfo, char *logMsg);
+synchronized byte[] prepareSend(String logMsg, byte[] packetContent);
 ```
 ```
-char *prepareSend(struct vcLog *vcInfo, char *logMsg, char *packetContent, int *encodeLen);
+synchronized byte[] prepareSend(String logMsg, byte packetContent);
 ```
 ```
-char *unpackReceive(struct vcLog *vcInfo,  char *logMsg, char *encodedBuffer, int bufLen);
+synchronized byte[] unpackReceive(String logMsg, byte[] encodedMsg);
 ```
 ```
-void DisableLogging (struct vcLog *vcInfo)
+void enableLogging();
+void disableLogging();
 ```
-#####   struct vcLog
+#####   JVec class
 
-```c
-struct vcLog {
-    char pid[VC_ID_LENGTH]; // Fixed to VC_ID_LENGTH defined in vclock.h.
-    struct vectorClock *vc; // The local vector clock map.
-    char logName[FILE_MAX]; // Name of the JVector log file to write to.
-    int printonscreen;      // Print all logging operations to screen.
-    int logging;            // Enable logging.
-}
-```
-This is the basic vcLog structure used in any JVector application.
-It contains the thread-local vector clock and process as well as 
-information about the logging procedure and file name.
-
- 
-#####   initJVector
-```c
-struct vcLog *initJVector(char *pid, char *logName)
-```
-Initialises and returns a new vcLog structure. This vcLog structure contains the configuration of the current vector thread as well as the vector clock map and process id.
-This structure is the basis of any further operation in JVector.
+This is the basic JVec class used in any JVector application.
+It contains the thread-local vector clock and process as well as information about the logging procedure and file name.
+This class is the basis of any further operation in JVector.
 Any log files with the same name as "logName" will be overwritten. "pid" should be unique in the current distributed system.
 
 #####   prepareSend
-```c
-char *prepareSend(struct vcLog *vcInfo, char *logMsg, char *packetContent, int *encodeLen)
+```java
+synchronized byte[] prepareSend(String logMsg, byte[] packetContent);
 ```
-Decodes a GoVector buffer, updates the local vector clock, and returns the decoded data.
-This function takes a MessagePack buffer and extracts the vector clock as well as data.
-It increments the local vector clock, merges the unpacked clock with its own and returns a character representation of the data. 
-In addition, prepareSend writes a custom defined message to the main JVector log.
+Encodes a buffer into a custom MessagePack byte array.
+This is the default JVector method.
+The function increments the vector clock contained of the JVec class, appends it to the binary "packetContent" and converts the full message into MessagePack format.
+This method is as generic as possible, any format passed to prepareSend will have to be decoded by unpackReceive. The decoded content will have to be cast back to the original format.
+In addition, prepareSend writes a custom defined message "logMsg" to the main JVector log.
 
 #####   unpackReceive
-```c
-char *unpackReceive(struct vcLog *vcInfo,  char *logMsg, char *encodedBuffer, int bufLen)
+```java
+synchronized byte[] unpackReceive(String logMsg, byte[] encodedMsg);
 ```
-Decodes a GoVector buffer, updates the local vector clock, and returns the 
-decoded data.
+Decodes a JVector buffer, updates the local vector clock, and returns the decoded data.
 This function takes a MessagePack buffer and extracts the vector clock as well as data. It increments the local vector clock, merges the unpacked clock with its own and returns a character representation of the data.
+This is the default method, which accepts any binary encoded data.
 In addition, prepareSend writes a custom defined message to the main JVector log.
 
 #####   logLocalEvent
-```c
-int logLocalEvent(struct vcLog *vcInfo, char *logMsg)
+```java
+synchronized void logLocalEvent(String logMsg);
 ```
-Records a local event and increments the vector clock contained in "vcInfo".
+Records a local event and increments the vector clock of this class.
 Also appends a message in the log file defined in the vcInfo structure.
 
 #####   writeLogMsg
 
-```c
-int writeLogMsg(struct vcLog *vcInfo, char *logMsg)
+```java
+void writeLogMsg(String logMsg);
 ```
-Appends a message in the log file defined in the vcLog vcInfo structure.
+Appends a message in the log file defined in this class.
 
 #####   enableLogging
-```c
-void enableLogging(struct vcLog *vcInfo);
+```java
+void enableLogging();
 ```
 Enables the logging mechanism of JVector. Logging is turned on by default.
-This is a cosmetic function. Setting `vcInfo->logging` to 1 fulfils the same purpose.
+This is a cosmetic function. Setting vc.logging to true fulfils the same purpose.
 
 #####   disableLogging
-```c
-void disableLogging(struct vcLog *vcInfo);
+```java
+void disableLogging();
 ```
 Disables the logging mechanism of JVector. Logging is turned on by default.
-This is a cosmetic function. Setting `vcInfo->logging` to 0 fulfils the same purpose.
+This is a cosmetic function. Setting vc.logging to false fulfils the same purpose.
 
 ###   Examples
 
 The following is a basic example of how this library can be used:
 
-```c
+```java
 #include "../src/jvec.h"
 
 int main (){
@@ -169,4 +144,4 @@ This produces the log "basiclog.shiviz" :
 
 
 An executable example of a similar program can be found in
-[example/client_server.c](https://github.com/DistributedClocks/JVector/blob/master/example/client_server.c)
+[examples/ClientServer](https://github.com/DistributedClocks/JVector/blob/master/examples/client_server.c)
