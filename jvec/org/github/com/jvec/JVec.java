@@ -224,14 +224,12 @@ public class JVec {
         }
         vc.tick(this.pid);
         mergeRemoteClock(remoteClock);
-
         try {
             writeLogMsg(logMsg);
         } catch (IOException e) {
             System.err.println("Could not write to log file.");
             e.printStackTrace();
         }
-
         unpacker.close();
         return decodedMsg;
     }
