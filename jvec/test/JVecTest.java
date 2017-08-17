@@ -1,8 +1,8 @@
 import org.github.com.jvec.JVec;
 import org.github.com.jvec.vclock.VClock;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
@@ -11,21 +11,21 @@ import java.nio.IntBuffer;
 import static org.junit.Assert.*;
 
 public class JVecTest {
-    JVec testVector;
+    JVec jVectorTest;
     TestObject testO;
     static String logName = "testLog-shiviz.txt";
 
     @Before
     public void setUp() throws Exception {
-        testVector = new JVec("proc1", "testLog");
+        jVectorTest = new JVec("proc1", "testLog");
         File file = new File(logName);
         assertTrue("Creating the file failed!", file.exists());
         testO = new TestObject("Information", 1234);
     }
 
-    @Test
+/*    @Test
     public void flushJVectorLog() throws Exception {
-        testVector.flushJVectorLog();
+        info1.flushJVectorLog();
         BufferedReader reader = new BufferedReader(new FileReader(logName));
         String line = reader.readLine();
         assertNotNull("Buffer was not flushed!", line);
@@ -34,16 +34,16 @@ public class JVecTest {
 
     @Test
     public void closeJVectorLog() throws Exception {
-        testVector.closeJVectorLog();
+        info1.closeJVectorLog();
         BufferedReader reader = new BufferedReader(new FileReader(logName));
         String line = reader.readLine();
         assertNotNull("Buffer was not properly flushed!", line);
         reader.close();
-    }
+    }*/
 
     @Test
     public void testInitialWrite() throws Exception {
-        testVector.flushJVectorLog();
+        // info1.closeJVectorLog();
         BufferedReader reader = new BufferedReader(new FileReader(logName));
         String line = reader.readLine();
         assertEquals("Writing the vector clock failed!", "proc1 {\"proc1\":1}", line);
@@ -53,7 +53,7 @@ public class JVecTest {
     }
 
     public void testWrite(String expectedMessage) throws Exception {
-        testVector.flushJVectorLog();
+        // info1.closeJVectorLog();
         BufferedReader reader = new BufferedReader(new FileReader(logName));
         String line = "";
         for (int i = 0; i < 3; i++) {
@@ -67,19 +67,19 @@ public class JVecTest {
 
     @Test
     public void getPid() throws Exception {
-        assertEquals("getPid failed! Process id is not correct", "proc1", testVector.getPid());
+        assertEquals("getPid failed! Process id is not correct", "proc1", jVectorTest.getPid());
     }
 
     @Test
     public void getVc() throws Exception {
-        VClock vc = testVector.getVc();
+        VClock vc = jVectorTest.getVc();
         assertEquals("The initial vector clock is incorrect!", "{\"proc1\":1}", vc.returnVCString());
     }
 
     @Test
     public void writeLogMsg() throws Exception {
-        testVector.writeLogMsg("This is a simple log message.");
-        testVector.flushJVectorLog();
+        jVectorTest.writeLogMsg("This is a simple log message.");
+        // jVectorTest.closeJVectorLog();
         BufferedReader reader = new BufferedReader(new FileReader(logName));
         String line = "";
         for (int i = 0; i < 3; i++) {
@@ -93,14 +93,14 @@ public class JVecTest {
 
     @Test
     public void logLocalEvent() throws Exception {
-        testVector.logLocalEvent("This is a local event!");
+        jVectorTest.logLocalEvent("This is a local event!");
         testWrite("This is a local event!");
     }
 
     @Test
     public void prepareSend_Byte() throws Exception {
         byte test = 'a';
-        byte[] result = testVector.prepareSend("Packing Byte.", test);
+        byte[] result = jVectorTest.prepareSend("Packing Byte.", test);
         byte[] expected = {-91, 112, 114, 111, 99, 49, -60, 1, 97, -127, -91, 112, 114, 111, 99, 49, 2};
         ByteBuffer decodedMsg = ByteBuffer.wrap(expected);
         int decodedInt = decodedMsg.getInt();
@@ -112,7 +112,7 @@ public class JVecTest {
     public void prepareSend_Int() throws Exception {
         int test = 1;
         ByteBuffer b = ByteBuffer.allocate(Integer.SIZE / Byte.SIZE);
-        byte[] result = testVector.prepareSend("Packing Integer.", b.putInt(test).array());
+        byte[] result = jVectorTest.prepareSend("Packing Integer.", b.putInt(test).array());
         byte[] expected = {-91, 112, 114, 111, 99, 49, -60, 4, 0, 0, 0, 1, -127, -91, 112, 114, 111, 99, 49, 2};
         assertArrayEquals("PrepareSend Output does not match!", expected, result);
         testWrite("Packing Integer.");
@@ -125,7 +125,7 @@ public class JVecTest {
         for (int i = 0; i < test.length; i++) {
             b.putInt(test[i]);
         }
-        byte[] result = testVector.prepareSend("Packing Integer Array.", b.array());
+        byte[] result = jVectorTest.prepareSend("Packing Integer Array.", b.array());
         byte[] expected = {-91, 112, 114, 111, 99, 49, -60, 20, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
                 -128, 0, 0, -128, 0, 127, -1, -1, -1, -127, -91, 112, 114, 111, 99, 49, 2};
         assertArrayEquals("PrepareSend Output does not match!", expected, result);
@@ -135,7 +135,7 @@ public class JVecTest {
     @Test
     public void prepareSend_String() throws Exception {
         String test = "Test";
-        byte[] result = testVector.prepareSend("Packing String.", test.getBytes());
+        byte[] result = jVectorTest.prepareSend("Packing String.", test.getBytes());
         byte[] expected = {-91, 112, 114, 111, 99, 49, -60, 4, 84, 101, 115, 116, -127, -91,
                 112, 114, 111, 99, 49, 2};
         assertArrayEquals("PrepareSend Output does not match!", expected, result);
@@ -148,7 +148,7 @@ public class JVecTest {
         ObjectOutput out = new ObjectOutputStream(bos);
         out.writeObject(testO);
         out.flush();
-        byte[] result = testVector.prepareSend("Packing Object.", bos.toByteArray());
+        byte[] result = jVectorTest.prepareSend("Packing Object.", bos.toByteArray());
         byte[] expected = {-91, 112, 114, 111, 99, 49, -60, 82, -84, -19, 0, 5, 115, 114,
                 0, 10, 84, 101, 115, 116, 79, 98, 106, 101, 99, 116, 9, -44, 62, -81, 94,
                 -55, -60, -90, 2, 0, 2, 73, 0, 2, 105, 100, 76, 0, 4, 110, 97, 109, 101,
@@ -164,7 +164,7 @@ public class JVecTest {
     public void unpackReceive_Byte() throws Exception {
         byte expected = 'a';
         byte[] input = {-91, 112, 114, 111, 99, 49, -60, 1, 97, -127, -91, 112, 114, 111, 99, 49, 2};
-        ByteBuffer result = ByteBuffer.wrap(testVector.unpackReceive("Unpacking Byte.", input));
+        ByteBuffer result = ByteBuffer.wrap(jVectorTest.unpackReceive("Unpacking Byte.", input));
         assertEquals("UnpackReceive Output does not match!", expected, result.get());
         testWrite("Unpacking Byte.");
     }
@@ -173,7 +173,7 @@ public class JVecTest {
     public void unpackReceive_Int() throws Exception {
         int expected = 1;
         byte[] input = {-91, 112, 114, 111, 99, 49, -60, 4, 0, 0, 0, 1, -127, -91, 112, 114, 111, 99, 49, 2};
-        ByteBuffer result = ByteBuffer.wrap(testVector.unpackReceive("Unpacking Integer.", input));
+        ByteBuffer result = ByteBuffer.wrap(jVectorTest.unpackReceive("Unpacking Integer.", input));
         assertEquals("UnpackReceive Output does not match!", expected, result.getInt());
         testWrite("Unpacking Integer.");
     }
@@ -183,7 +183,7 @@ public class JVecTest {
         int[] expected = {0, 1, 128, 32768, 2147483647};
         byte[] input = {-91, 112, 114, 111, 99, 49, -60, 20, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
                 -128, 0, 0, -128, 0, 127, -1, -1, -1, -127, -91, 112, 114, 111, 99, 49, 2};
-        IntBuffer result = ByteBuffer.wrap(testVector.unpackReceive("Unpacking Integer.", input)).asIntBuffer();
+        IntBuffer result = ByteBuffer.wrap(jVectorTest.unpackReceive("Unpacking Integer.", input)).asIntBuffer();
         int[] intResult = new int[result.remaining()];
         result.get(intResult);
         assertArrayEquals("UnpackReceive Output does not match!", expected, intResult);
@@ -195,7 +195,7 @@ public class JVecTest {
         String expected = "Test";
         byte[] input = {-91, 112, 114, 111, 99, 49, -60, 4, 84, 101, 115, 116, -127, -91,
                 112, 114, 111, 99, 49, 2};
-        String result  = new String (testVector.unpackReceive("Unpacking String.", input));
+        String result  = new String (jVectorTest.unpackReceive("Unpacking String.", input));
         assertEquals("UnpackReceive Output does not match!", expected, result);
         testWrite("Unpacking String.");
     }
@@ -209,7 +209,7 @@ public class JVecTest {
                 116, 0, 18, 76, 106, 97, 118, 97, 47, 108, 97, 110, 103, 47, 83, 116, 114,
                 105, 110, 103, 59, 120, 112, 0, 0, 4, -46, 116, 0, 11, 73, 110, 102, 111,
                 114, 109, 97, 116, 105, 111, 110, -127, -91, 112, 114, 111, 99, 49, 2};
-        byte[] result  = testVector.unpackReceive("Unpacking Object.", input);
+        byte[] result  = jVectorTest.unpackReceive("Unpacking Object.", input);
         ByteArrayInputStream bis = new ByteArrayInputStream(result);
         ObjectInput in = new ObjectInputStream(bis);
         TestObject resultObject = (TestObject) in.readObject();
@@ -220,36 +220,42 @@ public class JVecTest {
 
     @Test
     public void disableLogging() throws Exception {
-        testVector.disableLogging();
-        testVector.logLocalEvent("This should not be logged.");
-        testVector.flushJVectorLog();
+        jVectorTest.disableLogging();
+        jVectorTest.logLocalEvent("This should not be logged.");
+        // jVectorTest.closeJVectorLog();
         BufferedReader reader = new BufferedReader(new FileReader(logName));
         String line = "";
         for (int i = 0; i < 3; i++) {
             line = reader.readLine();
         }
         assertNull("Disable logging failed, we wrote to file!", line);
-        VClock vc = testVector.getVc();
+        VClock vc = jVectorTest.getVc();
         assertEquals("The vector clock did not update!", "{\"proc1\":2}", vc.returnVCString());
         reader.close();
     }
 
     @Test
     public void enableLogging() throws Exception {
-        testVector.disableLogging();
-        testVector.logLocalEvent("This should not be logged.");
-        testVector.enableLogging();
-        testVector.writeLogMsg("This should be logged.");
-        testVector.flushJVectorLog();
+        jVectorTest.disableLogging();
+        jVectorTest.logLocalEvent("This should not be logged.");
+        jVectorTest.enableLogging();
+        jVectorTest.writeLogMsg("This should be logged.");
+        // jVectorTest.closeJVectorLog();
         BufferedReader reader = new BufferedReader(new FileReader(logName));
         String line = "";
         for (int i = 0; i < 3; i++) {
             line = reader.readLine();
         }
-        VClock vc = testVector.getVc();
+        VClock vc = jVectorTest.getVc();
         assertEquals("The vector clock did not update!", "{\"proc1\":2}", vc.returnVCString());
         line = reader.readLine();
         assertEquals("Enable logging failed!", "This should be logged.", line);
         reader.close();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        File file = new File(logName);
+        file.delete();
     }
 }

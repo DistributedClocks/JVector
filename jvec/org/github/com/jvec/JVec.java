@@ -47,9 +47,8 @@ public class JVec {
 
     private final String pid;
     private VClock vc;
-    private BufferedWriter vectorLog;
+    private String logName;
     private boolean logging;
-
     public JVec(String pid, String logName) {
         this.pid = pid;
         this.logging = true;
@@ -78,10 +77,11 @@ public class JVec {
         this.vc = new VClock();
         this.vc.tick(this.pid);
         this.logging = true;
-
+        this.logName = logName;
         try {
             FileWriter fw = new FileWriter(logName + "-shiviz.txt");
-            vectorLog = new BufferedWriter(fw);
+            BufferedWriter vectorLog = new BufferedWriter(fw);
+            vectorLog.close();
         } catch (IOException e) {
             System.err.println("Could not open log file.");
             e.printStackTrace();
@@ -95,15 +95,26 @@ public class JVec {
         }
     }
 
-    public void flushJVectorLog() {
+    /**
+     * Flushes the currently buffered content in the BufferedWriter to file.
+     * Instead of opening and closing a writer for each file, we buffer the
+     * output and write it once the buffer is full or this function is called.
+     */
+/*    public void flushJVectorLog() {
         try {
             vectorLog.flush();
         } catch (IOException e) {
             System.err.println("Flushing failed:");
             e.printStackTrace();
         }
-    }
-    public void closeJVectorLog() {
+    }*/
+
+    /**
+     * Flushes the currently buffered content in the BufferedWriter to file.
+     * This function also closes the the buffer, indicating that this JVector
+     * class is finished.
+     */
+/*    public void closeJVectorLog() {
         try {
             vectorLog.flush();
             vectorLog.close();
@@ -111,7 +122,8 @@ public class JVec {
             System.err.println("Deallocation failed:");
             e.printStackTrace();
         }
-    }
+    }*/
+
     private boolean updateClock(String logMsg) {
         long time = this.vc.findTicks(this.pid);
         if (time == -1) {
@@ -138,8 +150,12 @@ public class JVec {
         if (!this.logging) {
             return;
         }
+        FileWriter fw = new FileWriter(this.logName + "-shiviz.txt", true);
+        BufferedWriter vectorLog = new BufferedWriter(fw);
         String vcString = this.pid + " " + this.vc.returnVCString() + "\n" + logMsg + "\n";
-        this.vectorLog.write(vcString);
+        vectorLog.write(vcString);
+        vectorLog.flush();
+        vectorLog.close();
     }
 
     /**
