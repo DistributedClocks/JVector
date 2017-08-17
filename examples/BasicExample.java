@@ -10,7 +10,7 @@ public class BasicExample {
         System.out.println("We are packing this message: " + sendingMessage);
         try {
             byte[] resultBuffer = vcInfo.prepareSend("Sending Message", sendingMessage.getBytes());
-            //Unpack the message again
+            // Unpack the message again
             byte[] receivedBuffer = vcInfo.unpackReceive("Receiving Message", resultBuffer);
             String receivedMessage = new String(receivedBuffer);
             System.out.println("We received this message: " + receivedMessage);
@@ -18,10 +18,12 @@ public class BasicExample {
             e.printStackTrace();
         }
 
-        //Can be called at any point
+        // Can be called at any point
         vcInfo.logLocalEvent("Example Complete");
-        //No further events will be written to log file
+        // No further events will be written to log file
         vcInfo.disableLogging();
         vcInfo.logLocalEvent("This will not be logged.");
+        // We are done. Flush the buffered results to our logfile and close the reader.
+        vcInfo.closeJVectorLog();
     }
 }

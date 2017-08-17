@@ -74,6 +74,8 @@ public class ClientServer {
                     serverSocket.send(sendPacket);
                 }
                 serverSocket.close();
+                // We are done. Flush the buffered results to our logfile and close the reader.
+                vcInfo.closeJVectorLog();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -103,6 +105,8 @@ public class ClientServer {
                     System.out.println("Received value " + decodedInt + " from server.");
                 }
                 clientSocket.close();
+                // We are done. Flush the buffered results to our logfile and close the reader.
+                vcInfo.closeJVectorLog();
             } catch (Exception e) {
                 System.out.println("Something went wrong.");
                 e.printStackTrace();

@@ -95,6 +95,23 @@ public class JVec {
         }
     }
 
+    public void flushJVectorLog() {
+        try {
+            vectorLog.flush();
+        } catch (IOException e) {
+            System.err.println("Flushing failed:");
+            e.printStackTrace();
+        }
+    }
+    public void closeJVectorLog() {
+        try {
+            vectorLog.flush();
+            vectorLog.close();
+        } catch (IOException e) {
+            System.err.println("Deallocation failed:");
+            e.printStackTrace();
+        }
+    }
     private boolean updateClock(String logMsg) {
         long time = this.vc.findTicks(this.pid);
         if (time == -1) {
@@ -123,7 +140,6 @@ public class JVec {
         }
         String vcString = this.pid + " " + this.vc.returnVCString() + "\n" + logMsg + "\n";
         this.vectorLog.write(vcString);
-        this.vectorLog.flush();
     }
 
     /**
