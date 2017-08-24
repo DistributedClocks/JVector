@@ -187,7 +187,7 @@ public class JVec {
         packer.packString(this.pid);
         packer.packBinaryHeader(packetContent.length);
         packer.writePayload(packetContent);
-        packer.packMapHeader(this.vc.getClockSize()); // the number of (key, value) pairs
+        packer.packMapHeader(this.vc.getClockMap().size()); // the number of (key, value) pairs
         for (Map.Entry<String, Long> clock : this.vc.getClockMap().entrySet()) {
             packer.packString(clock.getKey());
             packer.packLong(clock.getValue());

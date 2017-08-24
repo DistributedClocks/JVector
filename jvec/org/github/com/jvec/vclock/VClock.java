@@ -37,7 +37,7 @@ import java.util.TreeMap;
  */
 public class VClock {
 
-    private final TreeMap<String, Long> vc;
+    protected final TreeMap<String, Long> vc;
 
 
     public VClock() {
@@ -59,6 +59,7 @@ public class VClock {
      * @param pid The process id as string representation.
      */
     public void tick(String pid) {
+
         if (this.vc.containsKey(pid)) this.vc.put(pid, this.vc.get(pid) + 1);
         else this.vc.put(pid, (long) 1);
 
@@ -73,6 +74,13 @@ public class VClock {
      * @param ticks The value of time to be set as.
      */
     public void set(String pid, long ticks) {
+
+        // Anything less than 1 does not conform to specification.
+        // We automatically set ticks to the lowest possible value.
+        if (ticks <= 0) {
+            ticks = 1;
+        }
+
         if (this.vc.containsKey(pid)) this.vc.put(pid, ticks);
         else this.vc.put(pid, ticks);
     }
@@ -93,11 +101,11 @@ public class VClock {
      * @param pid The process id as string representation.
      */
     public long findTicks(String pid) {
-        long ticks = this.vc.get(pid);
-        if (this.vc.get(pid) == null) {
+
+        if (!this.vc.containsKey(pid)) {
             return -1;
         }
-        return ticks;
+        return this.vc.get(pid);
     }
 
     /**
@@ -149,7 +157,7 @@ public class VClock {
             vcString.append(clock.getKey());
             vcString.append("\":");
             vcString.append(clock.getValue());
-            if (i < mapSize-1) vcString.append(", ");
+            if (i < mapSize - 1) vcString.append(", ");
             i++;
         }
         vcString.append("}");
@@ -161,13 +169,6 @@ public class VClock {
      */
     public void printVC() {
         System.out.println(returnVCString());
-    }
-
-    /**
-     * Get the length of the current clock map.
-     */
-    public int getClockSize() {
-        return this.vc.size();
     }
 
     /**
